@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>关于隙铭 · CREVICE ENGRAVE</title>
+  <style>
+    /* 基础重置 */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-color: #f2eeea;
+      --accent-primary: #c06b6b;
+      --accent-secondary: #a8c4d4;
+      --text-main: #8a7a6e;
+      --text-dark: #2d2a28;
+      --border-light: rgba(138, 122, 110, 0.2);
+      --grid-line: rgba(138, 122, 110, 0.08);
+    }
+
+    body {
+      background-color: var(--bg-color);
+      /* 1. 提取元素：纸张网格底纹 */
+      background-image: 
+        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      color: var(--text-main);
+      line-height: 1.9;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* ================= 2. 提取元素：背景几何色块与线条 ================= */
+    
+    /* 浅蓝色斜切几何块 */
+    .shape-blue {
+      position: absolute;
+      top: 20%;
+      left: -10%;
+      width: 50vw;
+      height: 60vh;
+      background-color: rgba(168, 196, 212, 0.15); /* 极淡的蓝色 */
+      clip-path: polygon(0 0, 100% 20%, 80% 100%, 0 100%);
+      z-index: 0;
+    }
+    
+    /* 灰褐色几何块 */
+    .shape-brown {
+      position: absolute;
+      bottom: -10%;
+      right: -10%;
+      width: 60vw;
+      height: 50vh;
+      background-color: rgba(138, 122, 110, 0.08);
+      clip-path: polygon(100% 0, 100% 100%, 0 100%, 20% 20%);
+      z-index: 0;
+    }
+
+    /* 虚线圆环 */
+    .circle-outline {
+      position: absolute;
+      top: 10%;
+      right: -50px;
+      width: 400px;
+      height: 400px;
+      border: 1px dashed var(--accent-secondary);
+      border-radius: 50%;
+      opacity: 0.5;
+      z-index: 0;
+    }
+
+    /* 实线圆环 */
+    .circle-solid {
+      position: absolute;
+      bottom: 20%;
+      left: -80px;
+      width: 250px;
+      height: 250px;
+      border: 1px solid var(--border-light);
+      border-radius: 50%;
+      z-index: 0;
+    }
+
+    /* 十字准星 */
+    .cross-mark {
+      position: absolute;
+      font-family: monospace;
+      font-size: 28px;
+      color: var(--accent-secondary);
+      opacity: 0.6;
+      z-index: 0;
+    }
+    .cross-1 { top: 15%; left: 10%; }
+    .cross-2 { bottom: 15%; right: 12%; }
+
+    /* ================= 3. 内容区域（自由排版） ================= */
+    
+    .content-wrapper {
+      position: relative;
+      z-index: 10;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 80px 20px 100px;
+    }
+
+    /* 顶部返回导航 */
+    .back-nav {
+      margin-bottom: 60px;
+    }
+    
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text-dark);
+      font-weight: 600;
+      font-size: 15px;
+      transition: color 0.3s;
+    }
+    
+    .back-link:hover {
+      color: var(--accent-primary);
+    }
+
+    /* 标题区域 */
+    .page-title {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 64px;
+      font-weight: 900;
+      line-height: 1.1;
+      color: var(--text-dark);
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    .page-subtitle {
+      display: inline-block;
+      font-size: 15px;
+      letter-spacing: 0.15em;
+      color: var(--accent-primary);
+      font-weight: 600;
+      margin-bottom: 60px;
+      padding-bottom: 10px;
+      border-bottom: 2px dashed var(--border-light);
+    }
+
+    /* 正文排版 */
+    .article-content {
+      font-size: 16px;
+      color: var(--text-dark);
+      opacity: 0.85;
+    }
+
+    .article-content p {
+      margin-bottom: 24px;
+      text-align: justify;
+    }
+
+    .article-content h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 40px 0 20px;
+      display: flex;
+      align-items: center;
+    }
+    
+    /* 标题前的几何小方块 */
+    .article-content h2::before {
+      content: '';
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      background-color: var(--accent-primary);
+      margin-right: 12px;
+    }
+
+    /* 引用块（类似传单下方的列表样式） */
+    .quote-box {
+      background-color: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(10px);
+      border-left: 4px solid var(--accent-primary);
+      padding: 24px 30px;
+      margin: 40px 0;
+      font-style: italic;
+      color: var(--text-main);
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .page-title { font-size: 42px; }
+      .content-wrapper { padding: 40px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 提取出的传单背景元素 -->
+  <div class="shape-blue"></div>
+  <div class="shape-brown"></div>
+  <div class="circle-outline"></div>
+  <div class="circle-solid"></div>
+  <div class="cross-mark cross-1">+</div>
+  <div class="cross-mark cross-2">+</div>
+
+  <!-- 网页内容区 -->
+  <div class="content-wrapper">
+
+    <!-- 标题 -->
+    <header>
+      <h1 class="page-title">关于隙铭</h1>
+      <div class="page-subtitle">CREVICE ENGRAVE / 罅隙虽小 · 足以铭刻</div>
+    </header>
+
+    <!-- 正文内容（你可以随意增删修改） -->
+    <article class="article-content">
+      <p>
+        剥离现实的虚饰，这里是匿名且彻底保护隐私的文本空间。
+        你可以在此交出自己的困惑、隐痛与不解。诚实作答，是你对自我负责的开端。
+       </p>
+       <p>管理员联系方式：QQ：2903728531；微信号：wxid_n0cxp245fzad22</p>
+
+      <h2>我们的初衷</h2>
+      <p>
+        网站匿名且保证隐私，资料档案不会留痕。每日留言将由管理员进行筛选与清理，并在间隔一天后，以结构性视角对有价值的困惑进行拆解与回应。隙间有铭，期待你的直面。
+      </p>
+
+      <!-- 传单元素的文字延伸 -->
+      <div class="quote-box">
+        ◆ 于缝隙里，落下曾不愿回忆的笔触，扫去心中的伤痕，与世界同窗。<br><br>
+        ◇ 让不可见的伤口显影，让无解的执念落地。<br><br>
+        ◆ 回应的声音不响，只是清晰的点缀。
+      </div>
+
+      <h2>关于解读</h2>
+      <p>
+        所有的留言均默认公开，但您也可以勾选“仅管理员可见”。对于公开的留言，管理员会在 24 小时后提供情绪拆解与解读。这 24 小时是留给情绪的沉淀期，也是我们对抗快餐式社交的一种方式。
+        该网站的解读分析服务来自于拉康派精神分析以及齐泽克的哲学思考，将其中深刻的思维运用在本平台的沟通与互动之中，助力于回答你在生活之中独特的困惑与不解，获得一个认识生活的新视角。
+      </p>
+      <h2>关于“隙铭”背后的含义<h2>
+        <p>
+        隙间有铭，意味着即使是在空暇的间隙中一次勇敢的吐露和倾诉，都内涵着铭刻于心的改变与可能。
+        该网站的主要设计人是一个互联网哲学爱好者，擅长于解读事物背后的情绪与逻辑。同情于生活中各式各样没有被认真对待的不满与焦虑，我们搭建了这个平台，
+        为大家提供一种更加轻盈的方式来做出对于内心疑虑的倾诉与回应。同时，我们也怀抱着非常真挚的理想与信念，希望越来越多的有共同想法的同路人能够加入我们。一起尝试着把所学所想灵活运用于面对生活的挑战中，走出自我的封闭，搭建现实的联系。
+       </p>
+    
+      </article>
+
+  </div>
+
+</body>
+</html>
