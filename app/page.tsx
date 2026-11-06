@@ -123,7 +123,7 @@ export default function Home() {
         {/* 顶部公告 */}
         {showAnnouncement && (
           <div className="announcement">
-            <span>📢 隙铭公告：近期已开启匿名隐私保护，请大家放心留言。</span>
+            <span>📢 隙铭公告：本留言板严禁任何不良言论与恶意刷屏行为。匿名不代表无底线，不合适的内容将被管理员直接清理。请自觉维护这片空间的纯粹，感谢你的真诚与配合。</span>
             <span className="announcement-close" onClick={() => setShowAnnouncement(false)}>×</span>
           </div>
         )}
