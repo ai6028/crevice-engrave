@@ -30,6 +30,12 @@ export default function Home() {
   const fetchMessages = async () => {
     const res = await fetch('/api/messages');
     const data = await res.json();
+
+    if (!Array.isArray(data)) {
+        console.error("后端报错了，返回的数据是：", data);
+        setMessages([]); // 把列表置空，防止页面崩溃
+        return;
+      }
     setMessages(data);
 
     // 检查自己的留言中，有没有被管理员回复的
