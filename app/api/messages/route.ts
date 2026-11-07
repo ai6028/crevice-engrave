@@ -27,7 +27,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { content, visibility = 'public' } = body;
+    // 👇 新增解构出 analysis 变量
+    const { content, visibility = 'public', analysis = false } = body;
 
     if (!content || content.trim().length === 0) {
       return NextResponse.json({ error: '留言不能为空' }, { status: 400 });
@@ -35,7 +36,13 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from('messages')
-      .insert([{ content: content.trim(), visibility, status: 'visible' }])
+      // 👇 把 analysis_requested: analysis 存进 Supabase
+      .insert([{ 
+        content: content.trim(), 
+        visibility, 
+        status: 'visible',
+        analysis_requested: analysis 
+      }])
       .select();
 
     if (error) {

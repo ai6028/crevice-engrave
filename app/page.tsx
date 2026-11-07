@@ -11,6 +11,8 @@ type Message = {
 };
 
 export default function Home() {
+  // 新增：是否勾选了情绪解读
+  const [isAnalysisRequested, setIsAnalysisRequested] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
@@ -73,6 +75,7 @@ export default function Home() {
       body: JSON.stringify({
         content,
         visibility: isPrivate ? 'private' : 'public',
+        analysis: isAnalysisRequested,
       }),
     });
 
@@ -86,6 +89,7 @@ export default function Home() {
 
       setContent(''); 
       setIsPrivate(false); 
+      setIsAnalysisRequested(false);
       await fetchMessages(); 
     } else {
       const errorData = await res.json();
@@ -123,7 +127,7 @@ export default function Home() {
         {/* 顶部公告 */}
         {showAnnouncement && (
           <div className="announcement">
-            <span>📢 隙铭公告：本留言板严禁任何不良言论与恶意刷屏行为。感谢你的真诚与配合。</span>
+            <span>📢 隙铭公告：本留言板严禁任何不良言论与恶意刷屏行为，感谢你的真诚与配合。</span>
             <span className="announcement-close" onClick={() => setShowAnnouncement(false)}>×</span>
           </div>
         )}
@@ -182,18 +186,20 @@ export default function Home() {
         </aside>
 
         <main className="content-area">
-          <section className="form-section">
+            <section className="form-section">
             <div className="form-header">留下你的痕迹</div>
             <form onSubmit={handleSubmit}>
-              <div className="textarea-wrapper">
+            <div className="textarea-wrapper">
+                {/* 动态类名：如果勾选了，就加上 textarea-yellow 样式 */}
                 <textarea 
-                  placeholder="在这里写下你想说的话……（绝对匿名）"
+                  className={isAnalysisRequested ? 'textarea-yellow' : ''}
+                  placeholder={isAnalysisRequested ? "你已开启情绪解读，请在此写下你的困惑...（绝对匿名）" : "在这里写下你想说的话……（绝对匿名）"}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   maxLength={500}
                 ></textarea>
               </div>
-              <div className="form-bottom">
+              <div className="form-bottom" style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
                 <label className="checkbox-wrapper">
                   <input 
                     type="checkbox" 
@@ -202,7 +208,18 @@ export default function Home() {
                   />
                   仅管理员可见
                 </label>
-                <button type="submit" className="btn-submit" disabled={loading}>
+                
+                {/* 新增：情绪解读勾选框 */}
+                <label className="checkbox-wrapper">
+                  <input 
+                    type="checkbox" 
+                    checked={isAnalysisRequested}
+                    onChange={(e) => setIsAnalysisRequested(e.target.checked)}
+                  />
+                  情绪解读与诊断
+                </label>
+
+                <button type="submit" className="btn-submit" disabled={loading} style={{ marginLeft: 'auto' }}>
                   {loading ? '发送中...' : '发送留言 ↗'}
                 </button>
               </div>

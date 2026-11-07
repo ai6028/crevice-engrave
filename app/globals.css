@@ -290,3 +290,14 @@ textarea::placeholder { color: rgba(138, 122, 110, 0.5); font-family: var(--font
   .form-section { padding: 20px; }
   textarea { height: 180px; }
 }
+/* 情绪解读输入框特殊样式 */
+textarea.textarea-yellow {
+  background-color: #fffdf5; /* 极浅的暖黄 */
+  border-color: #e6c87c; /* 暖金色的边框 */
+  box-shadow: 0 0 0 3px rgba(230, 200, 124, 0.2); /* 暖光外阴影 */
+  color: var(--text-dark);
+}
+
+textarea.textarea-yellow:focus {
+  border-color: #d4af37; /* 聚焦时加深金色 */
+}
