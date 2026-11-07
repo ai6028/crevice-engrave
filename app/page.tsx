@@ -22,7 +22,23 @@ export default function Home() {
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [showReplyNotice, setShowReplyNotice] = useState(false);
+    // 记录用户不想看到的留言 ID
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<number[]>([]);
 
+  // 页面加载时读取本地记录的已屏蔽留言
+  useEffect(() => {
+    const savedHidden = localStorage.getItem('hiddenMessageIds');
+    if (savedHidden) {
+      setHiddenMessageIds(JSON.parse(savedHidden));
+    }
+  }, []);
+
+  // 用户点击“不看此条”的操作
+  const handleHideMessage = (id: number) => {
+    const newHidden = [...hiddenMessageIds, id];
+    setHiddenMessageIds(newHidden);
+    localStorage.setItem('hiddenMessageIds', JSON.stringify(newHidden));
+  };
   const fetchMessages = async () => {
     const res = await fetch('/api/messages');
     const data = await res.json();
