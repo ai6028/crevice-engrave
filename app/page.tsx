@@ -257,7 +257,7 @@ export default function Home() {
                     <div className="admin-reply">{msg.admin_reply}</div>
                   ) : (
                     <div className="admin-reply pending">
-                      留言发布未满 24 小时，管理员稍后为你解读。
+                      留言发布未满 12 小时，管理员稍后为你解读。
                     </div>
                   )}
                 </div>

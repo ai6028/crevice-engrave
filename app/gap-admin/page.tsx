@@ -63,7 +63,7 @@ export default function AdminPage() {
       const createTime = new Date(createdAt).getTime();
       const now = new Date().getTime();
       // 满 24 小时允许回复
-      return (now - createTime) >= 24 * 60 * 60 * 1000;
+      return (now - createTime) >= 12 * 60 * 60 * 1000;
     } catch {
       return true; 
     }
