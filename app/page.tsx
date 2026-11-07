@@ -229,7 +229,7 @@ export default function Home() {
                 <div className="message-content">还没有留言，来做第一个在缝隙中铭刻的人吧。</div>
               </div>
             ) : (
-              messages.map((msg) => (
+                messages.filter((msg) => !hiddenMessageIds.includes(msg.id)).map((msg) => (
                 <div 
                   key={msg.id} 
                   className={`message-card ${msg.analysis_requested ? 'yellow-border' : ''}`}
@@ -237,7 +237,15 @@ export default function Home() {
                   <div className="message-meta">
                     <span>匿名访客</span>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <span>{msg.created_at}</span>
+                                            <span>
+                        {new Date(msg.created_at).toLocaleString('zh-CN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
                       {myMessageIds.includes(msg.id) && (
                         <span 
                           onClick={() => handleRecall(msg.id)} 
@@ -246,6 +254,23 @@ export default function Home() {
                           撤回
                         </span>
                       )}
+
+                       {/* 新增：屏蔽按钮 */}
+                      <span 
+                        onClick={() => handleHideMessage(msg.id)} 
+                        style={{ 
+                          color: 'var(--text-main)', 
+                          cursor: 'pointer', 
+                          fontSize: '12px',
+                          border: '1px solid var(--border-light)',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          marginLeft: '4px'
+                        }}
+                        title="不再显示此条留言"
+                      >
+                        屏蔽
+                      </span>
                     </div>
                   </div>
                   
