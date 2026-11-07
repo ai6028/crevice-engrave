@@ -8,7 +8,8 @@ type Message = {
   content: string;
   created_at: string;
   admin_reply: string | null;
-  analysis_requested: boolean; // 👈 补上了这个属性，消除红波浪线
+  analysis_requested: boolean;
+  allow_comments?: boolean; // 👈 加个问号，表示这个字段目前可能不存在
 };
 
 export default function Home() {
@@ -251,7 +252,28 @@ export default function Home() {
                       )}
                     </div>
                   </div>
-                  <div className="message-content">{msg.content}</div>
+                                    <div className="message-content">{msg.content}</div>
+                  
+                  {/* 管理员已经回复的，正常显示回复内容 */}
+                  {msg.admin_reply ? (
+                    <div className="admin-reply">{msg.admin_reply}</div>
+                  ) : (
+                    <>
+                      {/* 还没回复时的逻辑判断 */}
+                      {msg.analysis_requested ? (
+                        <div className="admin-reply pending">
+                          留言发布未满 12 小时，管理员稍后为你解读。
+                        </div>
+                      ) : (msg as any).allow_comments ? (
+                        <div className="admin-reply pending" style={{ borderColor: 'var(--accent-secondary)', color: 'var(--accent-secondary)' }}>
+                          想评论互动一下吗，欢迎留言。
+                        </div>
+                      ) : (
+                        // 两个都没勾选，就不显示任何多余的字
+                        null
+                      )}
+                    </>
+                  )}
                   
                   {msg.admin_reply ? (
                     <div className="admin-reply">{msg.admin_reply}</div>
