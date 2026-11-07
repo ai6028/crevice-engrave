@@ -302,6 +302,9 @@ textarea.textarea-yellow:focus {
   border-color: #d4af37; /* 聚焦时加深金色 */
 }
 /* 情绪解读专属黄色边框 */
+/* 情绪解读专属暖金色边框 */
+/* 如果想把颜色用在背景上，用这段： */
 .message-card.yellow-border {
-  border-left: 6px solid #d4af37 !important; /* 金色边框，加粗并强制覆盖 */
+  background-color: #fffdf5 !important; /* 整张卡片泛起极其微弱的暖光 */
+  border-left-color: #F5DEB3 !important; 
 }
