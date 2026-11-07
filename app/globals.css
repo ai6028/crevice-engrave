@@ -301,3 +301,7 @@ textarea.textarea-yellow {
 textarea.textarea-yellow:focus {
   border-color: #d4af37; /* 聚焦时加深金色 */
 }
+/* 情绪解读专属黄色边框 */
+.message-card.yellow-border {
+  border-left: 6px solid #d4af37 !important; /* 金色边框，加粗并强制覆盖 */
+}
