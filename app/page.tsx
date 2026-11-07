@@ -129,7 +129,7 @@ export default function Home() {
       <header className="hero">
         {showAnnouncement && (
           <div className="announcement">
-            <span>📢 隙铭公告：本留言板严禁任何不良言论与恶意刷屏行为，感谢你的真诚与配合。</span>
+            <span>📢 隙铭公告：本留言板目前处于测试阶段，如有好的建议欢迎在留言板中分享，非常感谢。</span>
             <span className="announcement-close" onClick={() => setShowAnnouncement(false)}>×</span>
           </div>
         )}
