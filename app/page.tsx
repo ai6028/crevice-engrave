@@ -9,44 +9,34 @@ type Message = {
   created_at: string;
   admin_reply: string | null;
   analysis_requested: boolean;
-  allow_comments?: boolean; // 👈 加个问号，表示这个字段目前可能不存在
+  allow_comments?: boolean;
 };
 
 export default function Home() {
-  // 新增：是否勾选了情绪解读
   const [isAnalysisRequested, setIsAnalysisRequested] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  // 记录本地发过的留言 ID
   const [myMessageIds, setMyMessageIds] = useState<number[]>([]);
-
-  // 控制弹窗和公告
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
-
-  // 控制“收到新解读”的提示
   const [showReplyNotice, setShowReplyNotice] = useState(false);
 
-  // 获取留言并检查是否有新回复
   const fetchMessages = async () => {
     const res = await fetch('/api/messages');
     const data = await res.json();
 
     if (!Array.isArray(data)) {
-        console.error("后端报错了，返回的数据是：", data);
-        setMessages([]); // 把列表置空，防止页面崩溃
-        return;
-      }
+      console.error("后端报错了，返回的数据是：", data);
+      setMessages([]);
+      return;
+    }
     setMessages(data);
 
-    // 检查自己的留言中，有没有被管理员回复的
     const saved = localStorage.getItem('myMessageIds');
     if (saved) {
       const myIds = JSON.parse(saved);
-      // 如果有任意一条自己的留言收到了回复，就显示提示
       const hasNewReply = data.some((msg: Message) => 
         myIds.includes(msg.id) && msg.admin_reply !== null
       );
@@ -56,7 +46,6 @@ export default function Home() {
     }
   };
 
-  // 页面加载时读取本地记录并获取留言
   useEffect(() => {
     fetchMessages();
     const saved = localStorage.getItem('myMessageIds');
@@ -65,7 +54,6 @@ export default function Home() {
     }
   }, []);
 
-  // 提交留言
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || loading) return;
@@ -77,14 +65,12 @@ export default function Home() {
       body: JSON.stringify({
         content,
         visibility: isPrivate ? 'private' : 'public',
-        analysis: isAnalysisRequested, // 传给后端
+        analysis: isAnalysisRequested,
       }),
     });
 
     if (res.ok) {
       const data = await res.json();
-      
-      // 把刚发的留言 ID 存进本地浏览器
       const newIds = [...myMessageIds, data.id];
       setMyMessageIds(newIds);
       localStorage.setItem('myMessageIds', JSON.stringify(newIds));
@@ -100,7 +86,6 @@ export default function Home() {
     setLoading(false);
   };
 
-  // 撤回自己的留言
   const handleRecall = async (id: number) => {
     if (!confirm('确定要撤回这条留言吗？撤回后将无法恢复。')) return;
     
@@ -126,7 +111,6 @@ export default function Home() {
       <div className="math-circle circle-2"></div>
 
       <header className="hero">
-        {/* 顶部公告 */}
         {showAnnouncement && (
           <div className="announcement">
             <span>📢 隙铭公告：本留言板严禁任何不良言论与恶意刷屏行为，感谢你的真诚与配合。</span>
@@ -144,7 +128,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 新回复提示气泡 */}
       {showReplyNotice && (
         <div style={{ maxWidth: '1100px', margin: '0 auto 20px', padding: '0 20px', position: 'relative', zIndex: 30 }}>
           <div style={{
@@ -172,14 +155,12 @@ export default function Home() {
 
       <div className="main-layout">
         <aside className="sidebar">
-          {/* 文件分享：触发弹窗 */}
           <div className="side-box" onClick={() => setIsFileModalOpen(true)} style={{ cursor: 'pointer' }}>
             <div className="side-box-label"><span>FILE_01</span><span>↗</span></div>
             <div className="side-box-title">文件分享</div>
             <div className="side-box-desc">点击获取相关资料和文件</div>
           </div>
 
-          {/* 关于隙铭：跳转独立网页 */}
           <a href="/about.html" className="side-box" style={{ textDecoration: 'none', display: 'flex' }}>
             <div className="side-box-label"><span>INFO_02</span><span>↗</span></div>
             <div className="side-box-title">关于隙铭</div>
@@ -241,7 +222,6 @@ export default function Home() {
                     <span>匿名访客</span>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                       <span>{msg.created_at}</span>
-                      {/* 撤回按钮 */}
                       {myMessageIds.includes(msg.id) && (
                         <span 
                           onClick={() => handleRecall(msg.id)} 
@@ -252,35 +232,25 @@ export default function Home() {
                       )}
                     </div>
                   </div>
-                                    <div className="message-content">{msg.content}</div>
                   
-                  {/* 管理员已经回复的，正常显示回复内容 */}
+                  <div className="message-content">{msg.content}</div>
+                  
                   {msg.admin_reply ? (
                     <div className="admin-reply">{msg.admin_reply}</div>
                   ) : (
                     <>
-                      {/* 还没回复时的逻辑判断 */}
-                      {msg.analysis_requested ? (
+                      {msg.analysis_requested === true && (
                         <div className="admin-reply pending">
                           留言发布未满 12 小时，管理员稍后为你解读。
                         </div>
-                      ) : (msg as any).allow_comments ? (
+                      )}
+                      
+                      {(msg as any).allow_comments === true && (
                         <div className="admin-reply pending" style={{ borderColor: 'var(--accent-secondary)', color: 'var(--accent-secondary)' }}>
                           想评论互动一下吗，欢迎留言。
                         </div>
-                      ) : (
-                        // 两个都没勾选，就不显示任何多余的字
-                        null
                       )}
                     </>
-                  )}
-                  
-                  {msg.admin_reply ? (
-                    <div className="admin-reply">{msg.admin_reply}</div>
-                  ) : (
-                    <div className="admin-reply pending">
-                      留言发布未满 12 小时，管理员稍后为你解读。
-                    </div>
                   )}
                 </div>
               ))
@@ -289,7 +259,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* 文件分享弹窗层 */}
       {isFileModalOpen && (
         <div className="modal-overlay" onClick={() => setIsFileModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>

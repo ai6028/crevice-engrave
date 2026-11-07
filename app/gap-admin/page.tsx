@@ -57,12 +57,12 @@ export default function AdminPage() {
     if (res.ok) fetchAdminMessages();
   };
 
-  // 判断留言是否满24小时
+  // 判断留言是否满12小时
   const canReply = (createdAt: string) => {
     try {
       const createTime = new Date(createdAt).getTime();
       const now = new Date().getTime();
-      // 满 24 小时允许回复
+      // 满 12 小时允许回复
       return (now - createTime) >= 12 * 60 * 60 * 1000;
     } catch {
       return true; 
@@ -123,7 +123,7 @@ export default function AdminPage() {
                   </button>
                 </div>
               ) : (
-                <p style={{ color: 'orange', fontSize: '14px' }}>⏳ 留言发布未满 24 小时，暂不可解读。</p>
+                <p style={{ color: 'orange', fontSize: '14px' }}>⏳ 留言发布未满 12 小时，暂不可解读。</p>
               )}
             </div>
           )}
