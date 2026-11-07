@@ -8,6 +8,7 @@ type Message = {
   content: string;
   created_at: string;
   admin_reply: string | null;
+  analysis_requested: boolean; // 👈 补上了这个属性，消除红波浪线
 };
 
 export default function Home() {
@@ -25,7 +26,7 @@ export default function Home() {
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
 
-  // 新增：控制“收到新解读”的提示
+  // 控制“收到新解读”的提示
   const [showReplyNotice, setShowReplyNotice] = useState(false);
 
   // 获取留言并检查是否有新回复
@@ -75,7 +76,7 @@ export default function Home() {
       body: JSON.stringify({
         content,
         visibility: isPrivate ? 'private' : 'public',
-        analysis: isAnalysisRequested,
+        analysis: isAnalysisRequested, // 传给后端
       }),
     });
 
@@ -142,7 +143,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 👇 新增：新回复提示气泡 👇 */}
+      {/* 新回复提示气泡 */}
       {showReplyNotice && (
         <div style={{ maxWidth: '1100px', margin: '0 auto 20px', padding: '0 20px', position: 'relative', zIndex: 30 }}>
           <div style={{
@@ -186,11 +187,10 @@ export default function Home() {
         </aside>
 
         <main className="content-area">
-            <section className="form-section">
+          <section className="form-section">
             <div className="form-header">留下你的痕迹</div>
             <form onSubmit={handleSubmit}>
-            <div className="textarea-wrapper">
-                {/* 动态类名：如果勾选了，就加上 textarea-yellow 样式 */}
+              <div className="textarea-wrapper">
                 <textarea 
                   className={isAnalysisRequested ? 'textarea-yellow' : ''}
                   placeholder={isAnalysisRequested ? "你已开启情绪解读，请在此写下你的困惑...（绝对匿名）" : "在这里写下你想说的话……（绝对匿名）"}
@@ -209,7 +209,6 @@ export default function Home() {
                   仅管理员可见
                 </label>
                 
-                {/* 新增：情绪解读勾选框 */}
                 <label className="checkbox-wrapper">
                   <input 
                     type="checkbox" 
@@ -233,7 +232,10 @@ export default function Home() {
               </div>
             ) : (
               messages.map((msg) => (
-                <div key={msg.id} className="message-card">
+                <div 
+                  key={msg.id} 
+                  className={`message-card ${msg.analysis_requested ? 'yellow-border' : ''}`}
+                >
                   <div className="message-meta">
                     <span>匿名访客</span>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
