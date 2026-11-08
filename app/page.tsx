@@ -9,7 +9,8 @@ type Message = {
   created_at: string;
   admin_reply: string | null;
   analysis_requested: boolean;
-  allow_comments?: boolean;
+  allow_replies?: boolean;
+  parent_id?: number | null;
 };
 
 export default function Home() {
@@ -22,23 +23,25 @@ export default function Home() {
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [showReplyNotice, setShowReplyNotice] = useState(false);
-    // 记录用户不想看到的留言 ID
   const [hiddenMessageIds, setHiddenMessageIds] = useState<number[]>([]);
+  const [allowReplies, setAllowReplies] = useState(false);
 
-  // 页面加载时读取本地记录的已屏蔽留言
+  // 用于控制哪条主留言展开了回复输入框
+  const [activeReplyId, setActiveReplyId] = useState<number | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [replyLoading, setReplyLoading] = useState(false);
+
   useEffect(() => {
     const savedHidden = localStorage.getItem('hiddenMessageIds');
-    if (savedHidden) {
-      setHiddenMessageIds(JSON.parse(savedHidden));
-    }
+    if (savedHidden) setHiddenMessageIds(JSON.parse(savedHidden));
   }, []);
 
-  // 用户点击“不看此条”的操作
   const handleHideMessage = (id: number) => {
     const newHidden = [...hiddenMessageIds, id];
     setHiddenMessageIds(newHidden);
     localStorage.setItem('hiddenMessageIds', JSON.stringify(newHidden));
   };
+
   const fetchMessages = async () => {
     const res = await fetch('/api/messages');
     const data = await res.json();
@@ -56,18 +59,14 @@ export default function Home() {
       const hasNewReply = data.some((msg: Message) => 
         myIds.includes(msg.id) && msg.admin_reply !== null
       );
-      if (hasNewReply) {
-        setShowReplyNotice(true);
-      }
+      if (hasNewReply) setShowReplyNotice(true);
     }
   };
 
   useEffect(() => {
     fetchMessages();
     const saved = localStorage.getItem('myMessageIds');
-    if (saved) {
-      setMyMessageIds(JSON.parse(saved));
-    }
+    if (saved) setMyMessageIds(JSON.parse(saved));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,6 +81,7 @@ export default function Home() {
         content,
         visibility: isPrivate ? 'private' : 'public',
         analysis: isAnalysisRequested,
+        allow_replies: allowReplies,
       }),
     });
 
@@ -94,6 +94,7 @@ export default function Home() {
       setContent(''); 
       setIsPrivate(false); 
       setIsAnalysisRequested(false);
+      setAllowReplies(false);
       await fetchMessages(); 
     } else {
       const errorData = await res.json();
@@ -115,6 +116,33 @@ export default function Home() {
       alert('已成功撤回');
       await fetchMessages();
     }
+  };
+
+  // 提交回复（盖楼）的函数
+  const handleReplySubmit = async (parentId: number) => {
+    if (!replyContent.trim() || replyLoading) return;
+    setReplyLoading(true);
+
+    const res = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: replyContent,
+        parent_id: parentId,
+        visibility: 'public',
+        allow_replies: false
+      }),
+    });
+
+    if (res.ok) {
+      setReplyContent('');
+      setActiveReplyId(null);
+      await fetchMessages();
+    } else {
+      const errorData = await res.json();
+      alert(errorData.error || '回复失败');
+    }
+    setReplyLoading(false);
   };
 
   return (
@@ -199,21 +227,18 @@ export default function Home() {
               </div>
               <div className="form-bottom" style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
                 <label className="checkbox-wrapper">
-                  <input 
-                    type="checkbox" 
-                    checked={isPrivate}
-                    onChange={(e) => setIsPrivate(e.target.checked)}
-                  />
+                  <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
                   仅管理员可见
                 </label>
                 
                 <label className="checkbox-wrapper">
-                  <input 
-                    type="checkbox" 
-                    checked={isAnalysisRequested}
-                    onChange={(e) => setIsAnalysisRequested(e.target.checked)}
-                  />
+                  <input type="checkbox" checked={isAnalysisRequested} onChange={(e) => setIsAnalysisRequested(e.target.checked)} />
                   情绪解读与诊断
+                </label>
+
+                <label className="checkbox-wrapper">
+                  <input type="checkbox" checked={allowReplies} onChange={(e) => setAllowReplies(e.target.checked)} />
+                  允许其他用户回复
                 </label>
 
                 <button type="submit" className="btn-submit" disabled={loading} style={{ marginLeft: 'auto' }}>
@@ -229,77 +254,122 @@ export default function Home() {
                 <div className="message-content">还没有留言，来做第一个在缝隙中铭刻的人吧。</div>
               </div>
             ) : (
-                messages.filter((msg) => !hiddenMessageIds.includes(msg.id)).map((msg) => (
-                <div 
-                  key={msg.id} 
-                  className={`message-card ${msg.analysis_requested ? 'yellow-border' : ''}`}
-                >
-                  <div className="message-meta">
-                    <span>匿名访客</span>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            <span>
-                        {new Date(msg.created_at).toLocaleString('zh-CN', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                      {myMessageIds.includes(msg.id) && (
-                        <span 
-                          onClick={() => handleRecall(msg.id)} 
-                          style={{ color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: 'bold' }}
-                        >
-                          撤回
-                        </span>
-                      )}
+              // 只渲染主留言（parent_id 为空的）
+              messages.filter((msg) => !hiddenMessageIds.includes(msg.id) && !msg.parent_id).map((msg) => {
+                
+                // 找出挂在这条主留言下的回复（最多3条）
+                const replies = messages.filter((r) => r.parent_id === msg.id && !hiddenMessageIds.includes(r.id)).slice(0, 3);
+                const replyCount = replies.length;
 
-                       {/* 新增：屏蔽按钮 */}
-                      <span 
-                        onClick={() => handleHideMessage(msg.id)} 
-                        style={{ 
-                          color: 'var(--text-main)', 
-                          cursor: 'pointer', 
-                          fontSize: '12px',
-                          border: '1px solid var(--border-light)',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          marginLeft: '4px'
-                        }}
-                        title="不再显示此条留言"
-                      >
-                        屏蔽
-                      </span>
+                return (
+                  <div 
+                    key={msg.id} 
+                    className={`message-card ${msg.analysis_requested ? 'yellow-border' : ''}`}
+                  >
+                    <div className="message-meta">
+                      <span>匿名访客</span>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <span>
+                          {new Date(msg.created_at).toLocaleString('zh-CN', {
+                            year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+                          })}
+                        </span>
+                        {myMessageIds.includes(msg.id) && (
+                          <span onClick={() => handleRecall(msg.id)} style={{ color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: 'bold' }}>
+                            撤回
+                          </span>
+                        )}
+                        <span 
+                          onClick={() => handleHideMessage(msg.id)} 
+                          style={{ color: 'var(--text-main)', cursor: 'pointer', fontSize: '12px', border: '1px solid var(--border-light)', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}
+                          title="不再显示此条留言"
+                        >
+                          屏蔽
+                        </span>
+                      </div>
                     </div>
+                    
+                    <div className="message-content">{msg.content}</div>
+                    
+                    {/* 管理员回复 */}
+                    {msg.admin_reply ? (
+                      <div className="admin-reply">{msg.admin_reply}</div>
+                    ) : (
+                      <>
+                        {msg.analysis_requested === true && (
+                          <div className="admin-reply pending">
+                            留言发布未满 12 小时，管理员稍后为你解读。
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* ================= 盖楼区域 ================= */}
+                    {msg.allow_replies && (
+                      <div style={{ marginTop: '20px', borderTop: '1px dashed var(--border-light)', paddingTop: '16px' }}>
+                        
+                        {/* 回复列表（带向右箭头） */}
+                        {replyCount > 0 && (
+                          <div style={{ marginBottom: '16px' }}>
+                            {replies.map((reply, index) => (
+                              <div key={reply.id} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '8px' }}>
+                                <div style={{ color: 'var(--accent-primary)', fontFamily: 'monospace', marginTop: '4px', whiteSpace: 'nowrap', marginRight: '8px' }}>
+                                  ------&gt;
+                                </div>
+                                <div style={{ background: '#fff', padding: '10px 14px', borderLeft: '2px solid var(--accent-secondary)', fontSize: '14px', color: 'var(--text-dark)', flex: 1 }}>
+                                  {reply.content}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 如果回复没满3条，显示操作入口 */}
+                        {replyCount < 3 ? (
+                          <div>
+                            {activeReplyId === msg.id ? (
+                              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                <input 
+                                  type="text" 
+                                  value={replyContent}
+                                  onChange={(e) => setReplyContent(e.target.value)}
+                                  placeholder="写下你的回复..." 
+                                  style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-light)', outline: 'none' }}
+                                  autoFocus
+                                />
+                                <button onClick={() => handleReplySubmit(msg.id)} disabled={replyLoading} style={{ background: 'var(--accent-primary)', color: '#fff', border: 'none', padding: '0 16px', cursor: 'pointer' }}>
+                                  发送
+                                </button>
+                                <button onClick={() => { setActiveReplyId(null); setReplyContent(''); }} style={{ background: 'transparent', color: 'var(--text-main)', border: 'none', cursor: 'pointer' }}>
+                                  取消
+                                </button>
+                              </div>
+                            ) : (
+                              <span 
+                                onClick={() => { setActiveReplyId(msg.id); setReplyContent(''); }}
+                                style={{ color: 'var(--accent-primary)', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
+                              >
+                                {replyCount === 0 ? '该留言目前还没有回复，想说些什么吗？' : `已有 ${replyCount} 条回复，点击继续跟进 ↗`}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ color: 'var(--text-main)', fontSize: '12px', opacity: 0.6 }}>
+                            该条留言已达回复上限 (3/3)
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                   </div>
-                  
-                  <div className="message-content">{msg.content}</div>
-                  
-                  {msg.admin_reply ? (
-                    <div className="admin-reply">{msg.admin_reply}</div>
-                  ) : (
-                    <>
-                      {msg.analysis_requested === true && (
-                        <div className="admin-reply pending">
-                          留言发布未满 12 小时，管理员稍后为你解读。
-                        </div>
-                      )}
-                      
-                      {(msg as any).allow_comments === true && (
-                        <div className="admin-reply pending" style={{ borderColor: 'var(--accent-secondary)', color: 'var(--accent-secondary)' }}>
-                          想评论互动一下吗，欢迎留言。
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))
+                );
+              })
             )}
           </section>
         </main>
       </div>
 
+      {/* 文件分享弹窗层 */}
       {isFileModalOpen && (
         <div className="modal-overlay" onClick={() => setIsFileModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -321,7 +391,7 @@ export default function Home() {
                   <span className="file-size">PDF · 104KB</span>
                 </a>
                 <a href="/镜像阶段.pdf" download className="file-item">
-                  <span className="file-name">自恋与镜像的关系</span>
+                  <span className="file-name">镜像与自恋的关系</span>
                   <span className="file-size">PDF · 134KB</span>
                 </a>
               </div>

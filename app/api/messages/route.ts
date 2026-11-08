@@ -60,9 +60,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // 获取数据
+    // 获取数据（👇 这里新增了 allow_replies 和 parent_id）
     const body = await request.json();
-    const { content, visibility = 'public', analysis = false } = body;
+    const { content, visibility = 'public', analysis = false, allow_replies = false, parent_id = null } = body;
 
     // 空值校验
     if (!content || content.trim().length === 0) {
@@ -74,14 +74,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '留言包含违禁词汇，请文明用语。' }, { status: 400 });
     }
 
-    // 写入数据库
+    // 写入数据库（👇 把新增的字段一起 insert 进去）
     const { data, error } = await supabase
       .from('messages')
       .insert([{ 
         content: content.trim(), 
         visibility, 
         status: 'visible',
-        analysis_requested: analysis 
+        analysis_requested: analysis,
+        allow_replies: allow_replies, // 存进去
+        parent_id: parent_id          // 存进去（如果是主留言，这里就是 null）
       }])
       .select();
 
