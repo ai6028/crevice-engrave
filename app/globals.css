@@ -308,3 +308,146 @@ textarea.textarea-yellow:focus {
   background-color: #fffdf5 !important; /* 整张卡片泛起极其微弱的暖光 */
   border-left-color: #F5DEB3 !important; 
 }
+/* =========================================
+   管理员后台专属样式（适配手机端）
+   ========================================= */
+
+/* 登录页 */
+.admin-login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+.admin-login-box {
+  background: #fff;
+  padding: 40px;
+  border: 1px solid var(--border-light);
+  box-shadow: 8px 8px 0 rgba(138, 122, 110, 0.08);
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+}
+.admin-login-box h2 {
+  font-family: var(--font-title);
+  font-size: 24px;
+  color: var(--text-dark);
+  margin-bottom: 24px;
+}
+
+/* 主页面布局 */
+.admin-layout {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+.admin-header {
+  margin-bottom: 30px;
+}
+.admin-header h1 {
+  font-size: 28px;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+.admin-header p {
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+/* 留言卡片 */
+.admin-card {
+  background: #f9f9f9;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--accent-primary);
+}
+.admin-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: #888;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.admin-content {
+  font-size: 16px;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+  white-space: pre-wrap;
+}
+
+/* 输入框和按钮通用 */
+.admin-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+}
+.admin-input:focus {
+  border-color: var(--accent-primary);
+}
+.admin-btn-primary, .admin-btn-submit {
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+.admin-btn-primary {
+  width: 100%;
+  margin-top: 16px;
+}
+.admin-btn-submit {
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+/* 回复框组合 */
+.admin-reply-box {
+  display: flex;
+  gap: 10px;
+}
+.admin-replied {
+  background: #eef6f9;
+  padding: 12px;
+  border-left: 2px solid var(--accent-secondary);
+  font-size: 14px;
+}
+.admin-warning {
+  color: orange;
+  font-size: 14px;
+}
+.admin-btn-delete {
+  color: red;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* 📱 手机端专属适配 */
+@media (max-width: 600px) {
+  .admin-layout {
+    padding: 20px 15px;
+  }
+  .admin-card-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .admin-btn-delete {
+    align-self: flex-end;
+  }
+  .admin-reply-box {
+    flex-direction: column; /* 手机上输入框和按钮上下排列 */
+  }
+  .admin-btn-submit {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+  }
+}

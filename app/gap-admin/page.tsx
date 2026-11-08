@@ -8,7 +8,6 @@ export default function AdminPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [replyTexts, setReplyTexts] = useState<Record<number, string>>({});
 
-  // 获取所有留言（包含私密）
   const fetchAdminMessages = async () => {
     const res = await fetch('/api/messages', {
       method: 'PATCH',
@@ -16,14 +15,22 @@ export default function AdminPage() {
     });
     if (res.ok) {
       const data = await res.json();
-      setMessages(data);
+      
+      // 👇 前端加一层保险：把所有申请了解读的留言自动排在前面，方便你处理
+      const sortedData = data.sort((a: any, b: any) => {
+        if (a.analysis_requested === b.analysis_requested) {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        return a.analysis_requested ? -1 : 1; // true 排前面
+      });
+
+      setMessages(sortedData);
       setIsLoggedIn(true);
     } else {
       alert('暗号错误，无权限进入！');
     }
   };
 
-  // 提交管理员的情绪解读
   const handleReply = async (id: number) => {
     const text = replyTexts[id];
     if (!text) return;
@@ -43,7 +50,6 @@ export default function AdminPage() {
     }
   };
 
-  // 删除违规留言
   const handleDelete = async (id: number) => {
     if (!confirm('确定要删除这条留言吗？')) return;
     const res = await fetch('/api/messages', {
@@ -62,73 +68,102 @@ export default function AdminPage() {
     try {
       const createTime = new Date(createdAt).getTime();
       const now = new Date().getTime();
-      // 满 12 小时允许回复
       return (now - createTime) >= 12 * 60 * 60 * 1000;
     } catch {
       return true; 
     }
   };
 
-  // 登录界面
   if (!isLoggedIn) {
     return (
-      <div style={{ padding: '100px', textAlign: 'center', fontFamily: 'sans-serif' }}>
-        <h2 style={{ fontSize: '24px', marginBottom: '20px' }}>隙铭 · 管理员入口</h2>
-        <input 
-          type="password" 
-          placeholder="请输入暗号" 
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ padding: '10px', marginRight: '10px', border: '1px solid #ccc' }}
-        />
-        <button onClick={fetchAdminMessages} style={{ padding: '10px 20px', background: '#c06b6b', color: 'white', border: 'none', cursor: 'pointer' }}>
-          进入后台
-        </button>
+      <div className="admin-login-container">
+        <div className="admin-login-box">
+          <h2>隙铭 · 管理员入口</h2>
+          <input 
+            type="password" 
+            placeholder="请输入暗号" 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="admin-input"
+          />
+          <button onClick={fetchAdminMessages} className="admin-btn-primary">
+            进入后台
+          </button>
+        </div>
       </div>
     );
   }
 
-  // 后台界面
   return (
-    <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      <h1>隙铭 · 管理后台</h1>
-      <p style={{ color: '#888', marginBottom: '30px' }}>当前共有 {messages.length} 条留言记录</p>
+    <div className="admin-layout">
+      <header className="admin-header">
+        <h1>隙铭 · 管理后台</h1>
+        <p>当前共有 {messages.length} 条留言记录</p>
+      </header>
       
-      {messages.map((msg) => (
-        <div key={msg.id} style={{ background: '#f9f9f9', padding: '20px', marginBottom: '20px', borderLeft: '4px solid #c06b6b' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '12px', marginBottom: '10px' }}>
-            <span>
-              {msg.visibility === 'private' ? '🔒 私密留言' : '公开留言'} · {msg.created_at}
-            </span>
-            <button onClick={() => handleDelete(msg.id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>删除</button>
+      <div className="admin-list">
+        {messages.map((msg) => (
+          <div 
+            key={msg.id} 
+            className="admin-card"
+            style={{ 
+              // 给申请了情绪解读的留言，左边框变成金色
+              borderLeftColor: msg.analysis_requested ? '#D4AF37' : 'var(--accent-primary)',
+              borderLeftWidth: msg.analysis_requested ? '6px' : '4px'
+            }}
+          >
+            <div className="admin-card-meta">
+              <span>
+                {msg.visibility === 'private' ? '🔒 私密留言' : '公开留言'} · {msg.created_at}
+              </span>
+              <button onClick={() => handleDelete(msg.id)} className="admin-btn-delete">删除</button>
+            </div>
+
+            {/* 醒目的黄色高亮标签 */}
+            {msg.analysis_requested && (
+              <div style={{ 
+                display: 'inline-block', 
+                background: '#FFF9E6', 
+                color: '#B8860B', 
+                padding: '4px 10px', 
+                fontSize: '12px', 
+                fontWeight: 'bold', 
+                border: '1px solid #E6D3A8',
+                marginBottom: '10px',
+                marginTop: '5px'
+              }}>
+                🌟 该用户申请了情绪解读与诊断
+              </div>
+            )}
+            
+            <p className="admin-content">{msg.content}</p>
+            
+            {msg.admin_reply ? (
+              <div className="admin-replied">
+                <strong>已解读：</strong>{msg.admin_reply}
+              </div>
+            ) : (
+              <div>
+                {canReply(msg.created_at) ? (
+                  <div className="admin-reply-box">
+                    <input 
+                      placeholder="输入情绪解读..." 
+                      value={replyTexts[msg.id] || ''}
+                      onChange={(e) => setReplyTexts({ ...replyTexts, [msg.id]: e.target.value })}
+                      className="admin-input"
+                    />
+                    <button onClick={() => handleReply(msg.id)} className="admin-btn-submit">
+                      发布解读
+                    </button>
+                  </div>
+                ) : (
+                  <p className="admin-warning">⏳ 留言发布未满 12 小时，暂不可解读。</p>
+                )}
+              </div>
+            )}
           </div>
-          <p style={{ fontSize: '16px', marginBottom: '20px' }}>{msg.content}</p>
-          
-          {msg.admin_reply ? (
-            <div style={{ background: '#eef6f9', padding: '10px', borderLeft: '2px solid #a8c4d4' }}>
-              <strong>已解读：</strong>{msg.admin_reply}
-            </div>
-          ) : (
-            <div>
-              {canReply(msg.created_at) ? (
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <input 
-                    placeholder="输入情绪解读..." 
-                    value={replyTexts[msg.id] || ''}
-                    onChange={(e) => setReplyTexts({ ...replyTexts, [msg.id]: e.target.value })}
-                    style={{ flex: 1, padding: '8px', border: '1px solid #ccc' }}
-                  />
-                  <button onClick={() => handleReply(msg.id)} style={{ padding: '8px 16px', background: '#a8c4d4', color: 'white', border: 'none', cursor: 'pointer' }}>
-                    发布解读
-                  </button>
-                </div>
-              ) : (
-                <p style={{ color: 'orange', fontSize: '14px' }}>⏳ 留言发布未满 12 小时，暂不可解读。</p>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
