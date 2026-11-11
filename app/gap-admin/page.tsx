@@ -131,19 +131,22 @@ export default function AdminPage() {
             
             <p style={{ fontSize: '16px', color: '#2d2a28', marginBottom: '20px' }}>{msg.content}</p>
             
-            {msg.admin_reply ? (
+                        {msg.admin_reply ? (
+              // 1. 已经回复过的（正常显示）
               <div style={{ background: '#eef6f9', padding: '12px', borderLeft: '2px solid #a8c4d4' }}>
                 <strong>已解读：</strong>{msg.admin_reply}
               </div>
             ) : (
-              <div>
-                {canReply(msg.created_at) ? (
+              // 2. 还没回复的
+              msg.analysis_requested ? (
+                // 👇 只有申请了解读的，才走时间判断
+                canReply(msg.created_at) ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <input 
                       placeholder="输入情绪解读..." 
                       value={replyTexts[msg.id] || ''}
                       onChange={(e) => setReplyTexts({ ...replyTexts, [msg.id]: e.target.value })}
-                      style={{ padding: '10px', border: '1px solid #ccc', width: '100%', outline: 'none' }}
+                      style={{ padding: '10px', border: '1px solid #ccc', width: '100%' }}
                     />
                     <button onClick={() => handleReply(msg.id)} style={{ padding: '10px', background: '#a8c4d4', color: '#fff', border: 'none', cursor: 'pointer' }}>
                       发布解读
@@ -151,8 +154,11 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <p style={{ color: 'orange', fontSize: '14px' }}>⏳ 留言发布未满 12 小时，暂不可解读。</p>
-                )}
-              </div>
+                )
+              ) : (
+                // 👇 普通留言，什么都不显示
+                null
+              )
             )}
           </div>
         ))
